@@ -27,10 +27,27 @@ module Guard
     def start
       server = options[:server] ? "#{options[:server]} and " : ""
       UI.info "Guard::Rails will now restart your app on port #{options[:port]} using #{server}#{options[:environment]} environment."
-      run_all if options[:start_on_start]
+      restart_rails if options[:start_on_start]
     end
 
+
     def run_all
+      UI.info "Rails already running..." if runner.pid
+      restart_rails unless runner.pid
+    end
+
+    def stop
+      Notifier.notify("Until next time...", :title => "Rails shutting down.", :image => :pending)
+      runner.stop
+    end
+
+    def run_on_change(paths)
+      restart_rails
+    end
+
+    private
+
+    def restart_rails
       UI.info "Restarting Rails..."
       Notifier.notify("Rails restarting on port #{options[:port]} in #{options[:environment]} environment...", :title => "Restarting Rails...", :image => :pending)
       if runner.restart
@@ -40,15 +57,6 @@ module Guard
         UI.info "Rails NOT restarted, check your log files."
         Notifier.notify("Rails NOT restarted, check your log files.", :title => "Rails NOT restarted!", :image => :failed)
       end
-    end
-
-    def stop
-      Notifier.notify("Until next time...", :title => "Rails shutting down.", :image => :pending)
-      runner.stop
-    end
-
-    def run_on_change(paths)
-      run_all
     end
   end
 end
